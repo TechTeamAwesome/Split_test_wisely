@@ -1,0 +1,43 @@
+package databaseconn;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.*;
+
+import javax.naming.spi.*;
+
+
+
+public class connectionmysql {
+	public static void main(String [] args ) 
+	{
+		//Connection conn= null;
+		try
+		{
+			Connection conn= DriverManager.getConnection("jdbc:mysql://localhost/test1","root", "");
+			
+			String sql="SELECT * FROM persons where age=?";
+			
+			PreparedStatement prest;
+			
+			prest= conn.prepareStatement(sql);
+			
+			prest.setInt(1,20);
+			//System.out.println("connection sucess");
+			//String query= "SELECT * FROM persons";
+			//Statement stmt= conn.createStatement();
+			ResultSet rs= prest.executeQuery();
+			while(rs.next())
+			{
+				System.out.println(rs.getString(1));
+				System.out.println(rs.getString(2));
+				System.out.println(rs.getString(3));
+			}
+		}
+		catch(Exception e)
+		{
+			System.err.println(e);
+		}
+
+}
+}
