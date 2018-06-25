@@ -1,0 +1,44 @@
+package webservices;
+@Path("/addgroups")
+	@POST
+	@Produces("application/json")
+	@Consumes("application/json")
+	public Response addGroup(GroupModel lgroupModel)
+	{
+		String result= splitinit.addGroup(lgroupModel.getGroupName(),lgroupModel.getGroupMembers(),lgroupModel.getSessionID());
+		return Response.status(Status.OK).type("application/json").entity(result).build();
+		
+	}
+
+
+package servicesinit;
+public String addGroup(String groupName,List<Integer> groupMembers,long sessionID) 
+	{
+		/*if(AuthenticateSession(sessionId)) {
+			String userId = LocalCache.getuseridfromSessionId(sessionId);
+			return true;
+		}*/
+		String groupID=String.valueOf(DatabaseUtility.getGroupIDCounter());
+		DatabaseUtility.setGroupIDCounter(DatabaseUtility.getGroupIDCounter()+1);
+		Group group=new Group(groupID,groupName,"0");
+		DatabaseUtility.insert(group);
+		ListIterator<Integer> listiterator =groupMembers.listIterator();
+		while(listiterator.hasNext()){  
+			/*if(addMember(groupID,listiterator.next(),sessionID))
+				continue;
+			else
+			throw exception*/
+		}  
+		
+		return "groupadded";
+	}
+
+package persistentUtil;
+private static int groupIDCounter;
+public static int getGroupIDCounter() {
+		return groupIDCounter;
+	}
+public static void setGroupIDCounter(int groupIDCounter) {
+		DatabaseUtility.groupIDCounter = groupIDCounter;
+	}
+ groupIDCounter=0;//static
