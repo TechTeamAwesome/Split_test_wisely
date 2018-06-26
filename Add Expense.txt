@@ -1,0 +1,157 @@
+package servicesinit;
+
+public String addExpense(String SessionId, String groupId,String description, double amount,List<Integer> groupMembers, String splitcategory) 
+	{
+		/*
+		if(AuthenticateSession(sessionId))
+		{
+			String memberId = LocalCache.getuseridfromSessionId(sessionId);
+			return true;
+		}		
+		*/
+		
+		String transactionId = String.valueOf(DatabaseUtility.getTransactionIdCounter());
+		DatabaseUtility.setTransactionIdCounter(DatabaseUtility.getTransactionIdCounter() + 1);
+		Group group;
+		//group=DatabaseUtility.getGroup(groupId);
+		group.setGroupTotal(group.getGroupTotal()+amount);
+		DatabaseUtility.update(group);
+		ListIterator<Integer> listiterator = groupMembers.listIterator();
+		double individualAmount=amount/groupMembers.size();
+		while(listiterator.hasNext())
+		{
+			//Friend friend=get("Select * from Friends where groupId = '"+groupId+"' and userID= '"+memberId+"' and friendId = '"+listiterator.next().toString()+"'");
+			Friend friend=getFriend(groupId,memberId,listiterator.next());
+			friend.setOwnes(friend.getOwnes()+individualAmount);
+			
+			DatabaseUtility.update(friend);
+			
+			
+		}
+		ListIterator<Integer> listiterator1 = groupMembers.listIterator();
+		while(listiterator1.hasNext())
+		{
+			//Friend friend=get("Select * from Friends where groupId = '"+groupId+"' and userID= '"+listiterator1.next().toString()+"' and friendId = '"+memberId+"'");
+			Friend friend=getFriend(groupId,listiterator1.next(),memberId);
+			friend.setOwnes(friend.getOwnes()+individualAmount);
+			DatabaseUtility.update(friend);
+			
+			
+		}
+		Transactions expenses = new Transactions(transactionId, groupId, memberId, description, amount);
+		
+		DatabaseUtility.insert(expenses);
+		
+		return "Expense added";
+			
+	}
+	
+package webservices;
+@Path("/addExpense")
+	@POST
+	public Response addExpense(ExpenseModel lexpensemodel)
+	{
+		String sessionid = splitinit.addExpense(lexpensemodel.getSessionId(), lexpensemodel.getGroupId(),lexpensemodel.getDescription(), lexpensemodel.getAmount(), lexpensemodel.getSplitBwMembers(), lexpensemodel.getSplitCategory());
+
+			return Response.ok().type("application/json").entity("Response Successful").build();
+	}
+
+
+package models;
+
+import java.util.List;
+
+public class ExpenseModel 
+{
+	private String SessionId;
+	private String groupId;
+	private String description;
+	private double amount;
+	private List<Integer> splitBwMembers;
+	private String splitCategory;
+	
+	public ExpenseModel(String SessionId, String groupId, String description, double amount, String payer, List<Integer> splitBwMembers, String splitCategory)
+	{
+		this.SessionId = SessionId;
+		this.groupId = groupId;
+		this.description = description;
+		this.amount = amount;
+		this.setSplitBwMembers(splitBwMembers);
+		this.setSplitCategory(splitCategory);
+	}
+	
+	public ExpenseModel()
+	{
+		
+	}
+	
+	public String getSessionId() {
+		return SessionId;
+	}
+	
+	public void setSessionId(String SessionId) {
+		this.SessionId = SessionId;
+	}
+
+	public String getGroupId() {
+		return groupId;
+	}
+
+	public void setGroupId(String groupId) {
+		this.groupId = groupId;
+	}
+
+	public String getDescription() 
+	{
+		return description;
+	}
+	
+	public void setDescription(String description) 
+	{
+		this.description = description;
+	}
+	
+	public double getAmount() 
+	{
+		return amount;
+	}
+	
+	public void setAmount(double amount) 
+	{
+		this.amount = amount;
+	}
+	
+	public List<Integer> getSplitBwMembers() 
+	{
+		return splitBwMembers;
+	}
+
+	public void setSplitBwMembers(List<Integer> splitBwMembers) 
+	{
+		this.splitBwMembers = splitBwMembers;
+	}
+
+	public String getSplitCategory() 
+	{
+		return splitCategory;
+	}
+
+	public void setSplitCategory(String splitCategory) 
+	{
+		this.splitCategory = splitCategory;
+	}
+	
+}
+
+package persistentUtil;
+
+private static int transactionIdCounter;
+
+public static int getTransactionIdCounter() 
+	{
+		return transactionIdCounter;
+	}
+	public static void setTransactionIdCounter(int transactionIdCounter) 
+	{
+		DatabaseUtility.transactionIdCounter = transactionIdCounter;
+	}
