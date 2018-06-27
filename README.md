@@ -16,3 +16,4 @@
 25-06-2018 >>AddGroup added by Harshit Arora
 
 26 -6-18 >> addExpense() added by Prachi
+27 -6 -18 >>splitUnequally added by Arun
