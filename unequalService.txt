@@ -1,0 +1,10 @@
+@Path("/splitUnequally")
+	@POST
+	@Produces("application/json")
+	@Consumes("application/json")
+	public Response splitType(TypeSplit lexpensemodel) throws NumberFormatException, SQLException
+	{
+		String response = splitinit.splitUnequally(lexpensemodel.getSessionId(), lexpensemodel.getGroupId(),lexpensemodel.getPayer(),lexpensemodel.getPayerAmount(),lexpensemodel.getPayee(),lexpensemodel.getPayeeAmount(),lexpensemodel.getDescription());
+
+			return Response.ok().type("application/json").entity(response).build();
+	}	

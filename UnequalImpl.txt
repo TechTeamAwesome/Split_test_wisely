@@ -1,0 +1,155 @@
+public String splitUnequally(long sessionId, String groupId, List<String> Payer, List<Double> payerAmount, List<String> Payee, List<Double> payeeAmount, String description)
+			throws NumberFormatException, SQLException {
+		if (AuthenticateSession(sessionId)) {
+               
+
+                UnequalSplit hpayer=new UnequalSplit();
+                UnequalSplit hpayee=new UnequalSplit();
+                UnequalSplit hpayer1=new UnequalSplit();
+				
+                UnequalSplit hpayee1=new UnequalSplit();
+                
+               
+			try {
+
+				ListIterator<String> listiterator = Payer.listIterator();
+				ListIterator<Double> listiterator1 = payerAmount.listIterator();
+				ListIterator<String> listiterator2 = Payee.listIterator();
+				ListIterator<Double> listiterator3 = payeeAmount.listIterator();
+                double currentGroupTotal=0;
+				while (listiterator.hasNext() && listiterator1.hasNext()) {
+					double individualAmount = listiterator1.next();
+					currentGroupTotal+=individualAmount;
+					
+					Members member = DatabaseUtility.getMember(groupId, listiterator.next());
+                    double totalOfEachMember = Double.parseDouble(member.getTotalOfEachMemberinGroup())+ individualAmount;
+					double valueRounded = Math.round(totalOfEachMember * 100D) / 100D;
+					member.setTotalOfEachMemberinGroup(Double.toString(valueRounded));
+					DatabaseUtility.update(member);
+					
+					String transactionId = String.valueOf(DatabaseUtility.getTransactionIdCounter());
+					DatabaseUtility.setTransactionIdCounter(DatabaseUtility.getTransactionIdCounter() + 1);
+					Transactions expenses = new Transactions(transactionId, groupId, member.getMemberId(), description,individualAmount);
+					DatabaseUtility.insert(expenses);
+					//payer1.put(listiterator.next(), listiterator1.next());
+					hpayer.setFriendId(listiterator.next());
+					hpayer.setFriendAmount(listiterator1.next());
+					}
+				
+				Group group = DatabaseUtility.getGroup(groupId);
+				double TotalAmountOfGroup = Double.parseDouble(group.getGroupTotal())+currentGroupTotal;
+				double valueRounded1 = Math.round(TotalAmountOfGroup * 100D) / 100D;
+				group.setGroupTotal(Double.toString(valueRounded1));
+				DatabaseUtility.update(group);
+				
+				while (listiterator2.hasNext() && listiterator3.hasNext()) {
+					
+					Members member = DatabaseUtility.getMember(groupId, listiterator2.next());
+					double currentTotalOfEachMember = Double.parseDouble(member.getCurrenttotalOfEachMemberinGroup())+ listiterator3.nextIndex();
+					double valueRounded = Math.round(currentTotalOfEachMember * 100D) / 100D;
+					member.setCurrenttotalOfEachMemberinGroup(Double.toString(valueRounded));
+					DatabaseUtility.update(member);
+					
+					hpayee.setFriendId(listiterator2.next());
+					hpayee.setFriendAmount(listiterator3.next());
+				}
+				int size=Iterators.size(listiterator);
+				int size1=Iterators.size(listiterator1);
+				int size2=Iterators.size(listiterator2);
+				int size3=Iterators.size(listiterator3);
+				int count=size1;
+				 int hpayer1Count=0;
+				 int hpayee1Count=0;
+				if(size1<size3)count=size3;
+				for(int i=0;i<count;i++){
+					 
+		               if(hpayer.getFriendId().equals(hpayee.getFriendId()))
+					{
+						if(hpayer.getFriendAmount()>hpayee.getFriendAmount())
+							{
+							hpayer1.setFriendAmount(hpayer.getFriendAmount()-hpayee.getFriendAmount());
+							hpayer1.setFriendId(hpayer.getFriendId());
+							hpayer1Count++;
+							}
+						else if(hpayer.getFriendAmount()==hpayee.getFriendAmount()){
+							
+						}
+							
+						else 
+							{
+							hpayee1.setFriendAmount(hpayee.getFriendAmount()-hpayer.getFriendAmount());
+							hpayee1.setFriendId(hpayee.getFriendId());
+							hpayee1Count++;
+							}
+					}
+					if(!hpayer.getFriendId().equals(hpayee.getFriendId()))
+					{
+						if(!hpayer1.getFriendId().equals(hpayer.getFriendId()))
+						{
+						hpayer1.setFriendId(hpayer.getFriendId());
+						hpayer1.setFriendAmount(hpayer.getFriendAmount());
+						hpayer1Count++;
+						}
+						else {
+							if(!hpayee1.getFriendId().equals(hpayee.getFriendId()))
+							{
+							hpayee1.setFriendId(hpayee.getFriendId());
+							hpayee1.setFriendAmount(hpayee.getFriendAmount());
+							hpayee1Count++;
+							}
+						}
+						
+					}
+					
+					
+				}
+				Friends friend1,friend2;
+				String userId = LocalCache.getuseridfromSessionId(sessionId);
+				for(int i=0;i<hpayer1Count;i++)
+				{
+					for(int j=0;j<hpayee1Count;j++)
+					{
+						friend1=DatabaseUtility.getFriend(userId, hpayer1.getFriendId(), groupId);
+						friend2=DatabaseUtility.getFriend(userId, hpayee1.getFriendId(), groupId);
+						if(hpayer1.getFriendAmount()>0 && hpayee1.getFriendAmount()>0)
+						{
+							
+							if(hpayer1.getFriendAmount()>hpayee1.getFriendAmount())
+							{
+							friend1.setOwnes(friend1.getOwnes()+hpayee1.getFriendAmount());
+							DatabaseUtility.update(friend1);
+							friend2.setDebt(friend2.getDebt()+hpayee1.getFriendAmount());
+							DatabaseUtility.update(friend2);
+							hpayer1.setFriendAmount(hpayer1.getFriendAmount()-hpayee1.getFriendAmount());
+							hpayee1.setFriendAmount(hpayee1.getFriendAmount()-hpayee1.getFriendAmount());//=0
+						}
+							friend1.setOwnes(friend1.getOwnes()+hpayer1.getFriendAmount());
+							DatabaseUtility.update(friend1);
+							friend2.setDebt(friend2.getDebt()+hpayer1.getFriendAmount());
+							DatabaseUtility.update(friend2);
+							hpayer1.setFriendAmount(hpayer1.getFriendAmount()-hpayer1.getFriendAmount());//0
+							hpayee1.setFriendAmount(hpayee1.getFriendAmount()-hpayer1.getFriendAmount());
+						}
+						
+							
+						
+					}
+				}
+				
+				
+
+				
+				
+				
+				
+				
+				
+				
+
+			} catch (Exception e) {
+				e.getStackTrace();
+			}
+
+		}
+		return null;
+	}

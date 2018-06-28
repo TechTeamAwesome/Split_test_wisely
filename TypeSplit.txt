@@ -1,0 +1,65 @@
+package models;
+
+import java.util.List;
+
+public class TypeSplit {
+	 private long sessionId;
+	 private String groupId;
+	 private List<String> payer;
+	 private List<Double> payerAmount;
+	 private List<String> payee;
+	 private List<Double> payeeAmount;
+	 private String description;
+     
+    
+	
+	public long getSessionId() {
+		return sessionId;
+	}
+	public void setSessionId(long sessionId) {
+		this.sessionId = sessionId;
+	}
+	public String getGroupId() {
+		return groupId;
+	}
+	public void setGroupId(String groupId) {
+		this.groupId = groupId;
+	}
+	public List<String> getPayer() {
+		return payer;
+	}
+	public void setPayer(List<String> payer) {
+		this.payer = payer;
+	}
+	public List<Double> getPayerAmount() {
+		return payerAmount;
+	}
+	public void setPayerAmount(List<Double> payerAmount) {
+		this.payerAmount = payerAmount;
+	}
+	public List<String> getPayee() {
+		return payee;
+	}
+	public void setPayee(List<String> payee) {
+		this.payee = payee;
+	}
+	public List<Double> getPayeeAmount() {
+		return payeeAmount;
+	}
+	public void setPayeeAmount(List<Double> payeeAmount) {
+		this.payeeAmount = payeeAmount;
+	}
+	public String getDescription() {
+		return description;
+	}
+	public void setDescription(String description) {
+		this.description = description;
+	}
+	
+	
+	
+	
+	
+	
+	
+}
