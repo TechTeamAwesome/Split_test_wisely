@@ -1,0 +1,260 @@
+//Services
+
+@Path("/splitUnequally")
+	@POST
+	@Produces("application/json")
+	@Consumes("application/json")
+	public Response splitType(TypeSplit lexpensemodel) throws NumberFormatException, SQLException
+	{
+		String response = splitinit.splitUnequally(lexpensemodel.getSessionId(), lexpensemodel.getGroupId(),lexpensemodel.getPayer(),lexpensemodel.getPayerAmount(),lexpensemodel.getPayee(),lexpensemodel.getPayeeAmount(),lexpensemodel.getDescription());
+
+			return Response.ok().type("application/json").entity(response).build();
+	}	
+
+
+
+//MODEL
+
+**name:TypeSplit
+
+package models;
+
+import java.util.List;
+
+public class TypeSplit {
+	 private long sessionId;
+	 private String groupId;
+	 private List<String> payer;
+	 private List<Double> payerAmount;
+	 private List<String> payee;
+	 private List<Double> payeeAmount;
+	 private String description;
+     
+    
+	
+	public long getSessionId() {
+		return sessionId;
+	}
+	public void setSessionId(long sessionId) {
+		this.sessionId = sessionId;
+	}
+	public String getGroupId() {
+		return groupId;
+	}
+	public void setGroupId(String groupId) {
+		this.groupId = groupId;
+	}
+	public List<String> getPayer() {
+		return payer;
+	}
+	public void setPayer(List<String> payer) {
+		this.payer = payer;
+	}
+	public List<Double> getPayerAmount() {
+		return payerAmount;
+	}
+	public void setPayerAmount(List<Double> payerAmount) {
+		this.payerAmount = payerAmount;
+	}
+	public List<String> getPayee() {
+		return payee;
+	}
+	public void setPayee(List<String> payee) {
+		this.payee = payee;
+	}
+	public List<Double> getPayeeAmount() {
+		return payeeAmount;
+	}
+	public void setPayeeAmount(List<Double> payeeAmount) {
+		this.payeeAmount = payeeAmount;
+	}
+	public String getDescription() {
+		return description;
+	}
+	public void setDescription(String description) {
+		this.description = description;
+	}
+	}
+
+
+
+
+//IMPL
+
+public String splitUnequally(long sessionId, String groupId, List<String> Payer, List<Double> payerAmount,
+			List<String> Payee, List<Double> payeeAmount, String description)
+			throws NumberFormatException, SQLException {
+		if (AuthenticateSession(sessionId)) {
+
+			HashMap<String, Double> creditors = new HashMap<String, Double>();
+			HashMap<String, Double> debtors = new HashMap<String, Double>();
+
+			try {
+
+				ListIterator<String> listiterator = Payer.listIterator();
+				ListIterator<Double> listiterator1 = payerAmount.listIterator();
+				ListIterator<String> listiterator2 = Payee.listIterator();
+				ListIterator<Double> listiterator3 = payeeAmount.listIterator();
+				double currentGroupTotal = 0;
+				while (listiterator.hasNext() && listiterator1.hasNext()) {
+					double individualAmount = listiterator1.next();
+					currentGroupTotal += individualAmount;
+					String payerId = listiterator.next();
+					creditors.put(payerId, individualAmount);
+					Members member = DatabaseUtility.getMember(groupId, payerId);
+					double totalOfEachMember = Double.parseDouble(member.getTotalOfEachMemberinGroup())
+							+ individualAmount;
+					double valueRounded = Math.round(totalOfEachMember * 100D) / 100D;
+					member.setTotalOfEachMemberinGroup(Double.toString(valueRounded));
+					DatabaseUtility.update(member);
+					String query = "select MAX(CAST(transactionId AS SIGNED)) from transactions";
+					ResultSet rs = DatabaseUtility.get(query);
+					rs.next();
+					String transactionId = String.valueOf(rs.getInt(1) + 1);
+
+					Transactions expenses = new Transactions(transactionId, groupId, payerId, description,
+							individualAmount);
+
+					DatabaseUtility.insert(expenses);
+
+				}
+
+				Group group = DatabaseUtility.getGroup(groupId);
+
+				double TotalAmountOfGroup = Double.parseDouble(group.getGroupTotal()) + currentGroupTotal;
+				double valueRounded1 = Math.round(TotalAmountOfGroup * 100D) / 100D;
+
+				group.setGroupTotal(Double.toString(valueRounded1));
+				DatabaseUtility.update(group);
+
+				while (listiterator2.hasNext() && listiterator3.hasNext()) {
+					String payeeId = listiterator2.next();
+					double individualAmount = listiterator3.next();
+					debtors.put(payeeId, individualAmount);
+					Members member = DatabaseUtility.getMember(groupId, payeeId);
+					double currentTotalOfEachMember = Double.parseDouble(member.getCurrenttotalOfEachMemberinGroup())
+							+ individualAmount;
+					double valueRounded = Math.round(currentTotalOfEachMember * 100D) / 100D;
+					member.setCurrenttotalOfEachMemberinGroup(Double.toString(valueRounded));
+					DatabaseUtility.update(member);
+
+				}
+
+				for (String k : creditors.keySet()) {
+					if (debtors.containsKey(k)) {
+						double difference = creditors.get(k) - debtors.get(k);
+
+						if (difference > 0) {
+							debtors.remove(k);
+							creditors.replace(k, difference);
+						} else if (difference == 0) {
+							debtors.remove(k);
+							creditors.remove(k);
+						} else {
+							creditors.remove(k);
+							debtors.replace(k, difference);
+						}
+					}
+				}
+
+				Set<String> k = creditors.keySet();
+				Set<String> l = debtors.keySet();
+				String m = null;
+				String n = null;
+				for (int i = 0; i < k.size(); i++) {
+
+					m = (String) k.toArray()[i];
+					for (int j = 0; j < l.size(); j++) {
+						n = (String) l.toArray()[j];
+
+						double owndifference = creditors.get(m) - debtors.get(n);//
+						double debtdifference = debtors.get(n) - creditors.get(m);
+						Friends friend = DatabaseUtility.getFriend(m, n, groupId);
+						Friends peer = DatabaseUtility.getFriend(n, m, groupId);
+						if (debtdifference > 0) {
+							
+
+							double owns = friend.getOwnes() + creditors.get(m);
+							friend.setOwnes(owns);
+							DatabaseUtility.update(friend);
+
+							
+							double debt = peer.getDebt() + creditors.get(m);
+
+							peer.setDebt(debt);
+							DatabaseUtility.update(peer);
+							creditors.remove(m);
+
+							debtors.replace(n, debtdifference);
+							i = -1;
+							j = l.size() + 2;
+
+						}
+						if (owndifference > 0) {
+							
+
+							double owns = friend.getOwnes() + debtors.get(n);
+							friend.setOwnes(owns);
+							DatabaseUtility.update(friend);
+
+							
+							double debt = peer.getDebt() + debtors.get(n);
+
+							peer.setDebt(debt);
+							DatabaseUtility.update(peer);
+							debtors.remove(n);
+
+							creditors.replace(m, owndifference);
+
+							j = -1;
+
+						}
+						if (debtdifference == 0 || owndifference == 0) {
+							
+
+							double owns = friend.getOwnes() + creditors.get(m);
+							friend.setOwnes(owns);
+							DatabaseUtility.update(friend);
+
+							
+							double debt = peer.getDebt() + debtors.get(n);
+
+							peer.setDebt(debt);
+							DatabaseUtility.update(peer);
+							creditors.remove(m);
+							debtors.remove(n);
+							i = -1;
+							j = l.size() + 2;
+							;
+
+						}
+					}
+
+				}
+
+			} catch (Exception e) {
+				e.getStackTrace();
+			}
+			return "Done";
+
+		}
+
+		return null;
+	}
+	
+	
+	
+////BODY of PostMan
+
+{
+ "sessionId":4031313639239682243,
+ "groupId":"1",
+ "payer":["2","3"],
+ "payerAmount":[10000,20000],
+ "payee":["1","2","3","4"],
+ "payeeAmount":[8000,2000,7000,13000],
+ "description":"khana"
+}	
+	
+	
+
